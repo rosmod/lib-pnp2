@@ -1,3 +1,8 @@
+/** \file NetworkProfile.hpp 
+ * 
+ * This file declares the ResourceEntry and NetworkProfile classes.
+ */
+
 #ifndef NETWORK_PROFILE_HPP
 #define NETWORK_PROFILE_HPP
 
@@ -21,13 +26,13 @@
 
 namespace Network {
 
-  static const int ipv4_header_bytes = 20;
-  static const int ipv4_route_bytes = 11;
-  static const int ipv4_header_padding_bytes = 1;
-  static const int udp_header_bytes = 8;
-  static const int tcp_header_bytes = 20;
+  static const int ipv4_header_bytes = 20;        //!< ipv4 header
+  static const int ipv4_route_bytes = 11;         //!< ipv4 route header
+  static const int ipv4_header_padding_bytes = 1; //!< ipv4 extra header padding
+  static const int udp_header_bytes = 8;          //!< udp header
+  static const int tcp_header_bytes = 20;         //!< tcp header
 
-  /*
+  /**
    * UDP ROS TransportUDPHeader:
    * typedef struct TransportUDPHeader {
    *   uint32_t connection_id_;
@@ -39,6 +44,10 @@ namespace Network {
    */
   static const int ros_udp_header_bytes = 8;
 
+  /**
+     Exception class thrown when application exceeds allowed data
+     production.
+   */
   class Exceeded_Production_Profile
   {
   };
@@ -49,13 +58,21 @@ namespace Network {
     }
   };
 
+  /**
+     Holds the information about an interval of time starting at time,
+     with constant bandwidth and max_bandwidth.  Data and latency are
+     linearly interpolated between time and the start time of the next
+     ResourceEntry.  Data is interpolated according to bandwidth of
+     this ResourceEntry, while latency is interpolated according to
+     the latency value of the next ResourceEntry.
+   */
   class ResourceEntry {
   public:
-    double time;                      // sec
-    uint64_t bandwidth;     // bits / sec
-    uint64_t max_bandwidth; // bits / sec
-    uint64_t data;          // bits
-    double latency;                   // sec
+    double time;                      //!< units: sec
+    uint64_t bandwidth;               //!< units: bits / sec
+    uint64_t max_bandwidth;           //!< units: bits / sec
+    uint64_t data;                    //!< units: bits
+    double latency;                   //!< units: sec
 
     std::string toString() {
       char charBuf[100];
@@ -66,15 +83,23 @@ namespace Network {
     }
   };
 
+  /**
+     Defines how the bandwidth and latency of a given network link
+     vary as functions of time over a specified period.
+   */
   class NetworkProfile {
   private:
     bool initialized;
   public:
-    std::vector<ResourceEntry> resources;
-    timespec start_time;
-    double period;
-    uint64_t priority;
-    uint64_t uuid;
+    std::vector<ResourceEntry> resources;  //!< time-sorted array of
+					   //!< ResourceEntry elements
+					   //!< defining the bandwidth,
+					   //!< data, and latency
+					   //!< intervals
+    timespec start_time; //!< the start time of the profile in epoch time
+    double period;       //!< the period of the profile in seconds
+    uint64_t priority;   //!< the system-wide unique priority of the profile
+    uint64_t uuid;       //!< the unique ID of the profile
 
   public:
 
@@ -266,6 +291,11 @@ namespace Network {
       return offset;
     }
 
+    /**
+       Returns the interpolated, cumulative data that can have been
+       sent by time t.
+       @param[in] t the time in question (epoch time)
+     */
     uint64_t getDataAtTime( timespec t )
     {
       if (!HasEntries())
@@ -287,6 +317,12 @@ namespace Network {
       return retData;
     }
 
+    /**
+       Returns the bandwidth and latency for the interval containing
+       the current system clock's time.
+       @param[out] bandwidth the current available bandwidth
+       @param[out] latency the current latency data will experience on the link 
+     */
     int getCurrentInterval( uint64_t& bandwidth, double& latency ) {
       if (!HasEntries())
 	return -1;
@@ -306,6 +342,14 @@ namespace Network {
       return 0;
     }
 
+    /**
+       Returns the start, bandwidth, and latency values for the next
+       interval after the one that contains the current system clock's
+       time.  
+       @param[out] start the start time of the next interval in epoch time
+       @param[out] bandwidth the available bandwidth in the next interval
+       @param[out] latency the latency that will be experienced by data in the next interval
+     */
     int getNextInterval( timespec& start, uint64_t& bandwidth, double& latency ) {
       if (!HasEntries())
 	return -1;
@@ -337,6 +381,13 @@ namespace Network {
       return 0;
     }
 
+    /**
+       Returns the amount of time in seconds that data of length
+       dataLenBits will take to transmit at time sentTime.
+       @param[in] dataLenBits the length of the data in bits
+       @param[in] sentTime the epoch time when the data was sent
+       @return double seconds from the current time before more data can be sent
+     */
     double Delay(uint64_t dataLenBits, timespec sentTime) {
       if (!HasEntries())
 	return -1;
@@ -409,6 +460,9 @@ namespace Network {
     bool HasEntries() const { return resources.size() > 0; }
   };
 
+  /**
+     Returns a string header (csv) formatted for Message entries.
+   */
   static std::string header(int numTimes) {
     std::string retStr;
     retStr += "ID";
@@ -418,6 +472,9 @@ namespace Network {
     return retStr;
   }
 
+  /**
+     Returns a string of csv formatted Message data for the messages vector.
+   */
   static std::string data(const std::vector<Network::Message> messages) {
     std::string retStr;
     for (auto it=messages.begin(); it != messages.end(); ++it) {
@@ -426,6 +483,10 @@ namespace Network {
     return retStr;
   }
 
+  /**
+     Appends csv formatted Message data to the file at fname.  Returns
+     0 on success, -1 on failure.
+   */
   static int append_data(const char* fname, Network::Message& message) {
     std::string fStr = message.ToString() + "\n";
     std::ofstream file(fname, std::ofstream::app);
@@ -436,6 +497,10 @@ namespace Network {
     return 0;
   }
 
+  /**
+     Writes csv formatted header and data to the file at fname for the
+     Message vector messages.
+   */
   static int write_data(const char* fname, const std::vector<Network::Message> messages) {
     std::string fStr;
     fStr += Network::header(messages[0].NumTimes());
