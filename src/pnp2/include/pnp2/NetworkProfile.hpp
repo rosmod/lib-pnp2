@@ -1,6 +1,7 @@
 /** \file NetworkProfile.hpp 
  * 
- * This file declares the ResourceEntry and NetworkProfile classes.
+ * This file declares the Network::ResourceEntry and
+ * Network::NetworkProfile classes.
  */
 
 #ifndef NETWORK_PROFILE_HPP

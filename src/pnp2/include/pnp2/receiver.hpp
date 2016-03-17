@@ -1,3 +1,8 @@
+/** \file receiver.hpp 
+ * 
+ * This file declares the Network::receiver class
+ */
+
 #ifndef NETWORK_RECEIVER_HPP
 #define NETWORK_RECEIVER_HPP
 
@@ -13,6 +18,14 @@
 
 namespace Network
 {
+  /**
+     Allows for the reception of data through a (possibly fixed-size)
+     buffer at a configurable rate that can vary as a function of
+     time.  Optionally enables out-of-band (oob) communication to
+     senders to shut them off if the buffer is filling up too fast.
+     The receiver also records the reception of data (size, time) into
+     memory for later dump to disk.
+   */
   class receiver
   {
   public:

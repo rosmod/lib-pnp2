@@ -1,3 +1,8 @@
+/** \file sender.hpp 
+ * 
+ * This file declares the Network::sender class.
+ */
+
 #ifndef NETWORK_SENDER_HPP
 #define NETWORK_SENDER_HPP
 
@@ -16,8 +21,21 @@
 
 namespace Network
 {
+  /**
+     Exception class thrown when application exceeds allowed data
+     production.
+   */
   class Exceeded_Production_profile {}; // sender-side exception
 
+  /**
+     Allows for the sending of data (possibly through a buffer) at a
+     configurable rate and with configurable push-back to inform if
+     the rate has been exceeded.  Can also optionally receive
+     out-of-band (oob) push-backs from its associated receiver classes
+     to disable sending while they empty their receive buffers.  The
+     sender also records the sending of data (size, time) into memory
+     for later dump to disk.
+   */
   class sender
   {
   public:
